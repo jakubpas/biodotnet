@@ -8,6 +8,8 @@ using Bio.Util.ArgumentParser;
 using Bio.Util.Distribute;
 using System.Globalization;
 using System;
+using Bio.Algorithms.Alignment;
+using Bio.Extensions;
 
 namespace AlignmentApp
 {
@@ -63,43 +65,62 @@ namespace AlignmentApp
         {
             ISequenceParser parser = SequenceParsers.FindParserByFileName(InputFile.FullName);
             var allTheWorkQuery = parser.Parse(InputFile.FullName);
-            var myWorkAndAnIndex = SpecialFunctions.DivideWork(allTheWorkQuery, tasksToRun, taskCount, 1, new RangeCollection());
+            allTheWorkQuery.ForEach(s=>Console.WriteLine(s.ConvertToString()));
 
-            var myUniqueResultFileName = GetFileTaskFileName(tasksToRun.ToString());
+            var seq1 = allTheWorkQuery.First();
+            var seq2 = allTheWorkQuery.Last();
 
-            float gcCount = 0;
-            long seqLength = 0;
+            var aligner = new SmithWatermanAligner();
+            var res = aligner.Align(seq1, seq2);
+            Console.WriteLine("Smith-Waterman");
+            Console.WriteLine(res.First().PairwiseAlignedSequences.First().FirstSequence.ConvertToString());
+            Console.WriteLine(res.First().PairwiseAlignedSequences.First().SecondSequence.ConvertToString());
+            
+            var aligner2 = new NeedlemanWunschAligner();
+            var res2 = aligner.Align(seq1, seq2);
+            Console.WriteLine("Needleman-Wunsch");
+            Console.WriteLine(res2.First().PairwiseAlignedSequences.First().FirstSequence.ConvertToString());
+            Console.WriteLine(res2.First().PairwiseAlignedSequences.First().SecondSequence.ConvertToString());
+            
 
-            using (TextWriter writer = File.CreateText(myUniqueResultFileName))
-            {
-                // loop all sequences in current task
-                foreach (var numberAndIndex in myWorkAndAnIndex)
-                {
-                    writer.WriteLine(">" + numberAndIndex.Key.ID);
-                    foreach (byte val in numberAndIndex.Key)
-                    {
-                        seqLength++;
-                        switch (val)
-                        {
-                            case (byte)'G':
-                            case (byte)'g':
-                            case (byte)'C':
-                            case (byte)'c':
-                                gcCount++;
-                                break;
-                        }
-                    }
 
-                    if (gcCount > 0)
-                        writer.Write(((gcCount / (float)seqLength) * 100) + "%");
-                    else
-                        writer.Write(gcCount + "%");
+            // var myWorkAndAnIndex = SpecialFunctions.DivideWork(allTheWorkQuery, tasksToRun, taskCount, 1, new RangeCollection());
 
-                    seqLength = 0;
-                    gcCount = 0;
-                    writer.WriteLine();
-                }
-            }
+            // var myUniqueResultFileName = GetFileTaskFileName(tasksToRun.ToString());
+
+            // float gcCount = 0;
+            // long seqLength = 0;
+
+            // using (TextWriter writer = File.CreateText(myUniqueResultFileName))
+            // {
+            //     // loop all sequences in current task
+            //     foreach (var numberAndIndex in myWorkAndAnIndex)
+            //     {
+            //         writer.WriteLine(">" + numberAndIndex.Key.ID);
+            //         foreach (byte val in numberAndIndex.Key)
+            //         {
+            //             seqLength++;
+            //             switch (val)
+            //             {
+            //                 case (byte)'G':
+            //                 case (byte)'g':
+            //                 case (byte)'C':
+            //                 case (byte)'c':
+            //                     gcCount++;
+            //                     break;
+            //             }
+            //         }
+            //
+            //         if (gcCount > 0)
+            //             writer.Write(((gcCount / (float)seqLength) * 100) + "%");
+            //         else
+            //             writer.Write(gcCount + "%");
+            //
+            //         seqLength = 0;
+            //         gcCount = 0;
+            //         writer.WriteLine();
+            //     }
+            // }
         }
 
         /// <summary>
